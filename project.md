@@ -138,3 +138,82 @@ Todo.findOneAndDelete({"_id": req.params.id})
 
 module.exports = router;
 ```
+
+## Creating a MongoDB Database
+We will need a database to store all information when we make a post request to an endpoint. We will be using mLab which provides a DBaaS (Database as a service) solution.
+
+Login into mLab and create a cluster
+![cluster_creation](./img/11.cluster_creation.jpg)
+
+Create a database and a collection 
+![db_and_collection](./img/12.created_db_and_collection.jpg)
+
+To connect mongoose(application_db) to our database service we connect to it using the connection credential provided by mLab
+![db_connection](./img/13.db_connection.jpg)
+
+Copy the connection code and save it inside a `.env` file which should be created in the parent `todo` directory
+
+`DB = 'mongodb+srv://<username>:<password>@<network-address>/<dbname>?retryWrites=true&w=majority'`
+
+Change the username, password,database name and network address to the one specified by you when creating the database and collection.
+
+Update the code in our `index.js` as we need to point mongoose to the database service we created using mLab
+
+```
+const express = require('express');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const routes = require('./routes/api');
+const path = require('path');
+require('dotenv').config();
+
+const app = express();
+
+const port = process.env.PORT || 5000;
+
+//connect to the database
+mongoose.connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true })
+.then(() => console.log(`Database connected successfully`))
+.catch(err => console.log(err));
+
+//since mongoose promise is depreciated, we overide it with node's promise
+mongoose.Promise = global.Promise;
+
+app.use((req, res, next) => {
+res.header("Access-Control-Allow-Origin", "\*");
+res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+next();
+});
+
+app.use(bodyParser.json());
+
+app.use('/api', routes);
+
+app.use((err, req, res, next) => {
+console.log(err);
+next();
+});
+
+app.listen(port, () => {
+console.log(`Server running on port ${port}`)
+});
+```
+
+Then we run `node index.js` to test our connection.
+![db_connected](./img/14.db_connected.jpg)
+
+## Testing Backend Code Using Postman
+So far, we have built the backend of our application and in order to test to see if it works without a frontend, we use postman to test the endpoints.
+
+On Postman, we make a POST request to our database whilst specifying an action in the body of the request.
+
+![post_request](./img/15.post_request_success.jpg)
+![post_success](./img/16.db_gui_post_success.jpg)
+
+Then We make a GET request to see if we can get back what has been posted into the database.
+![get_request](./img/17.get_request_success.jpg)
+
+We can also make a delete request which deletes and entry using the id of each entry.
+![delete_request](./img/18.delete_request.jpg)
+![deleted_request](./img/19.deleted_.jpg)
+
